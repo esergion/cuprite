@@ -20,9 +20,15 @@ module Capybara::Cuprite
         @targets[target_id] = page
       end
 
-      def refresh
+      def refresh(attempt = 0)
         @mutex.synchronize do
-          targets.each { |t| push(t["targetId"]) if !default?(t) && !has?(t) }
+          loop do
+            attempt += 1
+            before = @targets.size
+            targets.each { |t| push(t["targetId"]) if !default?(t) && !has?(t) }
+            break if @targets.size - before > 0 || attempt > 5
+            sleep 0.05
+          end
         end
       end
 
